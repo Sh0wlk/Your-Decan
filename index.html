@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Университетский портал</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
-    <link rel="preconnect" href="https://googleapis.com">
-    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -323,7 +323,50 @@
             background-size: 100% 100%, auto !important;
         }
 
+        /* Плавная анимация заголовка страницы и сообщений чата */
+        .animate-title {
+            animation: fadeSlideUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        #active-chat-panel:not(.hidden) {
+            animation: fadeSlideUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .chat-msg-bubble {
+            animation: popScale 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* Индикация выбранной палитры и узора в профиле */
+        .theme-choice-active {
+            border-color: var(--accent) !important;
+            background-color: color-mix(in srgb, var(--accent) 14%, var(--bg-card)) !important;
+            color: var(--accent) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent) !important;
+        }
+        /* Унифицируем жёлтые и красные бейджи под текущую тему без сливания текста */
+        .bg-amber-50, .bg-amber-50\/70, .bg-amber-100,
+        .bg-rose-50, .bg-rose-100, .bg-red-50,
+        body.dark .bg-rose-50, body.dark .bg-rose-100 {
+            background-color: color-mix(in srgb, var(--accent) 12%, var(--bg-card)) !important;
+            border-color: color-mix(in srgb, var(--accent) 28%, var(--border-color)) !important;
+        }
+        .text-amber-600, .text-amber-700, .text-amber-800,
+        .text-rose-600, .text-rose-700, .text-red-500, .text-red-700 {
+            color: var(--accent) !important;
+        }
+        /* Если элемент имеет сплошной фон (.bg-accent, .bg-red-600, .bg-amber-500), текст внутри строго белый */
+        .bg-accent, .bg-accent *,
+        .bg-red-600, .bg-amber-500 {
+            background-color: var(--accent) !important;
+            color: var(--btn-text) !important;
+        }
+
+        /* Счётчики непрочитанных сообщений и точки уведомлений в сайдбаре — в цвет текущей темы */
+        .bg-red-600, .bg-amber-500 {
+            background-color: var(--accent) !important;
+            color: var(--btn-text) !important;
+        }
     </style>
+
+
 
 </head>
 <body class="min-h-screen transition-colors">
@@ -610,8 +653,15 @@
                 <!-- Компактная строка быстрого добавления пары на выбранный в слайдбаре день -->
                 <form id="quick-add-lesson-form" onsubmit="submitNewLesson(event)" class="hidden bg-white p-3.5 rounded-2xl border flex flex-wrap items-center gap-2 text-xs">
                     <span id="new-lesson-day-badge" class="px-3 py-2 bg-indigo-50 text-accent rounded-xl font-semibold shrink-0">Понедельник</span>
-                    <input type="time" id="new-lesson-start" value="09:00" required class="px-2.5 py-2 rounded-xl w-24">
-                    <input type="time" id="new-lesson-end" value="10:30" required class="px-2.5 py-2 rounded-xl w-24">
+                    <select id="new-lesson-slot" class="px-3 py-2 text-xs">
+                        <option value="09:00|10:30">1 пара (09:00 – 10:30)</option>
+                        <option value="10:45|12:15">2 пара (10:45 – 12:15)</option>
+                        <option value="12:45|14:15">3 пара (12:45 – 14:15)</option>
+                        <option value="14:30|16:00">4 пара (14:30 – 16:00)</option>
+                        <option value="16:15|17:45">5 пара (16:15 – 17:45)</option>
+                        <option value="18:00|19:30">6 пара (18:00 – 19:30)</option>
+                    </select>
+
                     <input type="text" id="new-lesson-subj" placeholder="Предмет" required class="flex-1 min-w-[140px] px-3 py-2 rounded-xl">
                     <input type="text" id="new-lesson-room" placeholder="Ауд." required class="w-20 px-2.5 py-2 rounded-xl">
                     <input type="text" id="new-lesson-corp" placeholder="Корп." required class="w-20 px-2.5 py-2 rounded-xl">
@@ -889,8 +939,7 @@
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="font-bold text-base">Личный кабинет и настройки</h3>
                 <button onclick="document.getElementById('modal-profile').classList.add('hidden')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-100 hover:text-rose-600 flex items-center justify-center text-sm font-semibold">✕</button>
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+
             </div>
 
             <div class="flex items-center gap-4">
@@ -933,19 +982,20 @@
                         <div class="space-y-2.5 pt-3 border-t text-xs">
                 <div class="font-bold text-slate-700">Цветовая схема (Светлая / Тёмная)</div>
                 <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="selectThemePalette('blue')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
+                    <button type="button" id="pal-btn-blue" onclick="selectThemePalette('blue')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
                         <span class="w-4 h-4 rounded-full bg-blue-600 shrink-0"></span><span>Синий океан</span>
                     </button>
-                    <button type="button" onclick="selectThemePalette('indigo')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
+                    <button type="button" id="pal-btn-indigo" onclick="selectThemePalette('indigo')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
                         <span class="w-4 h-4 rounded-full bg-indigo-600 shrink-0"></span><span>Фиолетовый неон</span>
                     </button>
-                    <button type="button" onclick="selectThemePalette('emerald')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
+                    <button type="button" id="pal-btn-emerald" onclick="selectThemePalette('emerald')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
                         <span class="w-4 h-4 rounded-full bg-emerald-600 shrink-0"></span><span>Изумрудный лес</span>
                     </button>
-                    <button type="button" onclick="selectThemePalette('rose')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
+                    <button type="button" id="pal-btn-rose" onclick="selectThemePalette('rose')" class="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border text-left font-semibold">
                         <span class="w-4 h-4 rounded-full bg-rose-600 shrink-0"></span><span>Малиновый гранат</span>
                     </button>
                 </div>
+
             </div>
                         <div class="space-y-2 pt-3 border-t text-xs">
                 <div class="font-bold text-slate-700">Узор фона</div>
@@ -973,8 +1023,6 @@
                     <p id="att-lesson-sub" class="text-xs text-slate-500 mt-0.5"></p>
                 </div>
                 <button onclick="document.getElementById('modal-lesson-attendance').classList.add('hidden')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-100 hover:text-rose-600 flex items-center justify-center text-sm font-semibold">✕</button>
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
             </div>
             <div id="att-students-list" class="max-h-[65vh] overflow-y-auto divide-y pb-24 pr-1"></div>
         </div>
@@ -1014,6 +1062,12 @@
         </div>
     </div>
     <script>
+        const esc = (s) => String(s ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
 
         const API_URL = "https://dec-sh0wlk.msk1.amvera.tech/api";
         let authMode = "login";
@@ -1077,6 +1131,10 @@
             for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
             const btn = document.getElementById("theme-btn");
             if (btn) btn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" class="w-4 h-4"></i>`;
+            ["blue", "indigo", "emerald", "rose"].forEach(k => {
+                const el = document.getElementById(`pal-btn-${k}`);
+                if (el) el.classList.toggle("theme-choice-active", k === paletteKey);
+            });
             if (window.lucide) lucide.createIcons();
         }
         function selectThemePalette(key) { localStorage.setItem("portal_palette" + getUserThemeSuffix(), key); applyCurrentPalette(); }
@@ -1256,8 +1314,7 @@
             e.preventDefault();
             const groupId = parseInt(document.getElementById("schedule-group-select").value);
             const targetDay = selectedScheduleDay === "ALL" ? "Понедельник" : selectedScheduleDay;
-            const start = document.getElementById("new-lesson-start").value;
-            const end = document.getElementById("new-lesson-end").value;
+            const [start, end] = document.getElementById("new-lesson-slot").value.split("|");
 
             const res = await fetch(`${API_URL}/schedule`, {
                 method: "POST",
@@ -1436,7 +1493,12 @@
         function openSection(secId) {
             document.querySelectorAll("main section").forEach(el => el.classList.add("hidden"));
             document.getElementById(`sec-${secId}`).classList.remove("hidden");
-            document.getElementById("page-heading").textContent = SECTION_TITLES[secId] || "Портал ВУЗа";
+            const heading = document.getElementById("page-heading");
+            heading.textContent = SECTION_TITLES[secId] || "Портал ВУЗа";
+            heading.classList.remove("animate-title");
+            void heading.offsetWidth;
+            heading.classList.add("animate-title");
+
             document.getElementById("sidebar").classList.add("-translate-x-[110%]");
             document.querySelectorAll(".nav-btn").forEach(btn => {
                 btn.classList.toggle("active", btn.dataset.sec === secId);
@@ -1897,7 +1959,7 @@
             scrollBox.innerHTML = msgs.map(m => {
                 const isMine = m.sender_id === currentUser.id;
                 return `
-                    <div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}">
+                    <div class="chat-msg-bubble flex flex-col ${isMine ? 'items-end' : 'items-start'}">
                         <span class="text-[11px] text-slate-400 mb-1 px-1">${m.sender_name} • ${m.date}</span>
                         <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isMine ? 'bg-accent' : 'bg-slate-100 border'}">${m.text}</div>
                     </div>
@@ -2222,9 +2284,11 @@
                 }
                 return;
             }
+            const currentCard = trainerQueue.at(0);
             document.getElementById("trainer-controls").classList.remove("hidden");
-            document.getElementById("trainer-front-text").textContent = trainerQueue.front;
-            document.getElementById("trainer-back-text").textContent = trainerQueue.back;
+            document.getElementById("trainer-front-text").textContent = currentCard.front;
+            document.getElementById("trainer-back-text").textContent = currentCard.back;
+
         }
 
         function launchConfetti() {
@@ -2537,8 +2601,14 @@
             currentBgPattern = pat;
             localStorage.setItem("portal_bg_pattern", pat);
             document.body.classList.toggle("pattern-stripes", pat === "stripes");
-            document.getElementById("bg-canvas").classList.toggle("hidden", pat === "stripes");
+            const canvas = document.getElementById("bg-canvas");
+            if (canvas) canvas.classList.toggle("hidden", pat === "stripes");
+            const bDots = document.getElementById("pat-btn-dots");
+            const bStripes = document.getElementById("pat-btn-stripes");
+            if (bDots) bDots.classList.toggle("theme-choice-active", pat === "dots");
+            if (bStripes) bStripes.classList.toggle("theme-choice-active", pat === "stripes");
         }
+
         setBgPattern(currentBgPattern);
 
         (function initInteractiveDots() {
